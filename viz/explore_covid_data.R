@@ -48,8 +48,10 @@ ggplot(comb)  +
   facet_grid(. ~ var) + 
   theme_void() + 
   scale_fill_gradientn(colors=ihme_cols) + 
-  ggtitle("Perc of cases and deaths unassigned to state level") + 
+  ggtitle("Perc of cases and deaths unassigned to county level") + 
   theme(plot.title = element_text(hjust = 0.5))
+ggsave('../res/unassigned.pdf')
+system('pdfcrop ../res/unassigned.pdf')
 
 #Visalize deaths and cases before and after June
 m2 <- m %>%

@@ -55,7 +55,6 @@ m3 <- merge(ee, st, all=T) %>%
 # Combine All
 ##########################
 comb <- merge(m3, m2, all=T) %>%
-  filter(State %in% c("CA", "WA", "OR")) %>%
   select(countyFIPS=GEOID, date, aerosols, pm25, State, deaths, cases, death_rate, case_rate)
 
 write.csv(comb, 'moddat.csv', row.names=F)

@@ -1,0 +1,91 @@
+---
+title: "Effects of Wildfires on Covid"
+output: html_document
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+urlcolor: blue
+---
+
+```{r, echo=FALSE}
+knitr::opts_chunk$set(fig.pos="!H", out.extra = "")
+```
+
+# Independent Variable: Air Quality
+
+[Github repo](github.com/mooper/fires-covid)
+
+## Option 1: Data on PM2.5 from AirNow Sensors.
+
+- Missing in some counties
+- Not yet corrected for outliers/faulty stations
+
+![PM2.5 in counties with AirNow Sensors, in August and September 2020.](/home/mattcoop/fires-covid/res/pm25-crop.pdf)
+
+
+## Option 2: Data on Aerosol Index from ESA Sentinel Satellite.
+
+- More comprehensive
+- "The main aerosol types that cause signals detected in the AI are desert dust, biomass burning and volcanic ash plumes." [here](https://earth.esa.int/web/sentinel/technical-guides/sentinel-5p/level-2/aerosol-index)
+
+![Aerosol Index, in August and September 2020.](/home/mattcoop/fires-covid/res/aerosols-crop.pdf)
+
+\newpage
+
+# Dependent Variable: Covid Cases & Mortality
+
+- Data from [USAfacts.com](USAfacts.com), was recommended by CDC.
+- Comprehensive data at daily, county-level scale.
+- In some cases, states are at the state level:
+
+![Percent of cases and deaths unassigned to a specific county since July.](/home/mattcoop/fires-covid/res/unassigned-crop.pdf)
+
+So, we will model for CA, OR, WA, NV, and ID
+
+\newpage
+
+# Modeling
+
+- Focus on past month
+- Fixed effects at the county level
+- Thin-Plate Spline temporal effect
+- Day-of-week fixed effect
+
+```{r, echo=FALSE}
+extract.gam <- function(x){
+  tidy(x, parametric=T) %>%
+    filter(!grepl('countyFIPS|doy', term))
+}
+
+```
+```{r}
+library(tidyverse)
+library(lubridate)
+library(mgcv)
+library(broom)
+
+setwd('/home/mattcoop/fires-covid/data/')
+
+options(stringsAsFactors=F)
+
+dat <- read.csv('moddat.csv') %>% 
+  filter(State %in% c("CA", "WA", "OR", "ID", "NV"),
+         date >= ymd('2020-08-15'),
+         date < ymd('2020-09-14')) %>%
+  mutate(doy = factor(weekdays(ymd(date))),
+         countyFIPS = factor(countyFIPS),
+         date = as.numeric(ymd(date)))
+
+death_pm25 <- gam(death_rate ~ pm25 + countyFIPS + s(date) + doy,
+                  data = dat, method='REML')
+case_pm25 <- gam(case_rate ~ pm25 + countyFIPS + s(date) + doy,
+                 data = dat, method='REML')
+death_aeros <- gam(death_rate ~ aerosols + countyFIPS + s(date) + doy,
+                      data = dat, method='REML')
+case_aeros <- gam(case_rate ~ aerosols + countyFIPS + s(date) + doy,
+                     data = dat, method='REML')
+
+extract.gam(death_pm25)
+extract.gam(case_pm25)
+extract.gam(death_aeros)
+extract.gam(case_aeros)
+
+```

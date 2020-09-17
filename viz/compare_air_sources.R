@@ -1,4 +1,5 @@
 library(tidyverse)
+library(lubridate)
 library(sf)
 
 setwd('~/fires-covid/data')
@@ -13,11 +14,15 @@ st <- read.csv('daily_pm_2020.csv') %>%
   mutate(id = paste0('sens_', full_aqs_id)) %>%
   select(id, date=day, pm25)
 
-m <- merge(ee, st, all.x=F, all.y=F)
+m <- merge(ee, st, all.x=F, all.y=F) %>%
+  filter(ymd(date) >= ymd('2020-08-15'))
 
-plot(m$aerosols, log(m$pm25))
-plot(m$aerosols, m$pm25)
-
+ggplot(m) + 
+  geom_bin2d(aes(x=aerosols, y=pm25), bins=50)
+ggsave('../res/pm_aerosols_corr.png')
+ggplot(m) + 
+  geom_bin2d(aes(x=log(aerosols), y=log(pm25)), bins=50)
+ggsave('../res/pm_aerosols_corr_log.png')
 
 
 ##Compare Aug 10 to Sept 10 for stations vs satellite
@@ -47,11 +52,14 @@ ggplot(ctym) +
   facet_grid(. ~ day) + 
   theme_void() + 
   scale_fill_gradientn(colors=ihme_cols)
+ggsave('../res/aerosols.pdf')
+system('pdfcrop ../res/aerosols.pdf')
 
 ggplot(ctym) + 
   geom_sf(aes(fill=pm25), color=NA) + 
   facet_grid(. ~ day) + 
   theme_void() + 
   scale_fill_gradientn(colors=ihme_cols)
-
+ggsave('../res/pm25.pdf')
+system('pdfcrop ../res/pm25.pdf')
 
