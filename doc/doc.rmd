@@ -57,9 +57,8 @@ extract.gam <- function(x){
 
 ```
 ```{r}
-library(tidyverse)
 library(lubridate)
-library(mgcv)
+library(tidyverse)
 library(broom)
 
 setwd('/home/mattcoop/fires-covid/data/')
